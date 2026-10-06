@@ -1,0 +1,73 @@
+import numpy as np
+
+# 1. Define the Profile Structure Problem
+# Suppose our structural profile has 3 layers we want to discover.
+# These are the actual hidden target values we want the algorithm to find.
+target_profile = np.array([1.5, 3.0, 0.5])
+
+def objective_function(profile_candidate):
+    """
+    Evaluates how close the candidate profile structure is to our target.
+    Lower score = better match.
+    """
+    return np.mean((profile_candidate - target_profile) ** 2)
+
+# 2. PSO Configuration Parameters
+num_particles = 20
+num_dimensions = 3  # Matches the 3 layers in our structural profile
+max_iter = 50
+
+w = 0.5   # Inertia weight (controls momentum)
+c1 = 1.5  # Cognitive coefficient (attraction to personal best)
+c2 = 1.5  # Social coefficient (attraction to global swarm best)
+
+# 3. Initialization
+# Randomly distribute particles within a search boundary (e.g., 0 to 5)
+positions = np.random.uniform(0, 5, (num_particles, num_dimensions))
+velocities = np.random.uniform(-1, 1, (num_particles, num_dimensions))
+
+# Set initial personal best positions and their respective objective scores
+personal_best_positions = np.copy(positions)
+personal_best_scores = np.array([objective_function(p) for p in positions])
+
+# Identify and set the initial overall global best profile
+global_best_index = np.argmin(personal_best_scores)
+global_best_position = np.copy(personal_best_positions[global_best_index])
+global_best_score = personal_best_scores[global_best_index]
+
+# 4. Main Optimization Loop
+for iteration in range(max_iter):
+    for i in range(num_particles):
+        # Generate random coefficients for stochastic movement
+        r1 = np.random.rand(num_dimensions)
+        r2 = np.random.rand(num_dimensions)
+        
+        # Calculate new velocity vector
+        velocities[i] = (w * velocities[i] + 
+                         c1 * r1 * (personal_best_positions[i] - positions[i]) + 
+                         c2 * r2 * (global_best_position - positions[i]))
+        
+        # Apply velocity to update position
+        positions[i] += velocities[i]
+        
+        # Bound handling: Keep profiles physically meaningful (e.g., no negative thicknesses)
+        positions[i] = np.clip(positions[i], 0, 5)
+        
+        # Evaluate current fitness score
+        current_score = objective_function(positions[i])
+        
+        # Update Personal Best if the new position performs better
+        if current_score < personal_best_scores[i]:
+            personal_best_scores[i] = current_score
+            personal_best_positions[i] = np.copy(positions[i])
+            
+            # Update Global Best if this particle beats the entire swarm
+            if current_score < global_best_score:
+                global_best_score = current_score
+                global_best_position = np.copy(positions[i])
+
+# 5. Display Results
+print("--- Optimization Complete ---")
+print(f"Target Profile Vector: {target_profile}")
+print(f"Optimal Profile Found: {np.round(global_best_position, 4)}")
+print(f"Final Objective Score (MSE): {global_best_score:.6f}")
