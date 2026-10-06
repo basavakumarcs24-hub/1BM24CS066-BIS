@@ -1,0 +1,61 @@
+import random
+
+# Each house = [rent, distance, size]
+houses = [
+    [15000, 5, 800],
+    [12000, 8, 600],
+    [18000, 3, 1000],
+    [10000, 10, 500],
+    [14000, 4, 750]
+]
+
+# Fitness function
+def fitness(house):
+    rent, distance, size = house
+
+    # Lower rent and distance are better
+    # Bigger size is better
+    score = (size / 100) - (rent / 1000) - distance
+
+    return score
+
+
+# Create initial population
+population = random.choices(houses, k=4)
+
+for generation in range(10):
+
+    # Sort houses according to fitness
+    population.sort(key=fitness, reverse=True)
+
+    # Select best 2 houses
+    parent1 = population[0]
+    parent2 = population[1]
+
+    # Crossover
+    child = [
+        parent1[0],       # rent from parent 1
+        parent2[1],       # distance from parent 2
+        parent1[2]        # size from parent 1
+    ]
+
+    # Mutation
+    if random.random() < 0.2:
+        child[0] = random.choice(houses)[0]
+
+    # Create new population
+    population = [parent1, parent2, child]
+
+    # Add another random house
+    population.append(random.choice(houses))
+
+
+# Best house
+population.sort(key=fitness, reverse=True)
+best_house = population[0]
+
+print("Best House:")
+print("Rent:", best_house[0])
+print("Distance:", best_house[1], "km")
+print("Size:", best_house[2], "sq.ft")
+print("Fitness:", fitness(best_house))
